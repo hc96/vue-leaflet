@@ -49,7 +49,7 @@ for using GraphQL to request the coordinates and categories from the pages in Pr
 ```
 ## Images
 
-``` bash
+
 # main view
 ![main view of the map](https://raw.githubusercontent.com/hc96/vue-leaflet/master/images/1.png)
 
@@ -57,15 +57,15 @@ for using GraphQL to request the coordinates and categories from the pages in Pr
 ![locations of supermarkets category](https://raw.githubusercontent.com/hc96/vue-leaflet/master/images/2.png)
 
 # form dialog for adding new location
-![locations of supermarkets category](https://raw.githubusercontent.com/hc96/vue-leaflet/master/images/4.png)
-![locations of supermarkets category](https://raw.githubusercontent.com/hc96/vue-leaflet/master/images/3.png)
+![form dialog for adding new location](https://raw.githubusercontent.com/hc96/vue-leaflet/master/images/4.png)
+![form dialog for adding new location](https://raw.githubusercontent.com/hc96/vue-leaflet/master/images/3.png)
 
 # search bar
-![locations of supermarkets category](https://raw.githubusercontent.com/hc96/vue-leaflet/master/images/5.png)
+![search bar](https://raw.githubusercontent.com/hc96/vue-leaflet/master/images/5.png)
 
 # notification
-![locations of supermarkets category](https://raw.githubusercontent.com/hc96/vue-leaflet/master/images/6.png)
+![notification](https://raw.githubusercontent.com/hc96/vue-leaflet/master/images/6.png)
 
-``` 
+
 
 
