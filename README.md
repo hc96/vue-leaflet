@@ -47,8 +47,6 @@ for Search Bar---search on the map
 for using GraphQL to request the coordinates and categories from the pages in ProcessWire
 
 ```
-## Images
-
 
 # main view
 ![main view of the map](https://raw.githubusercontent.com/hc96/vue-leaflet/master/images/1.png)
