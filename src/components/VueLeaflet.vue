@@ -1,8 +1,6 @@
 <template>
 
-
-
-<div class="vue-leaflet" v-if ="!Object.keys(markers).length && !this.noLocation && this.hasMarker && addMarkers()" >
+<div class="vue-leaflet" v-if ="!Object.keys(markers).length && !this.noLocation && this.hasMarker && addMarkers()"  >
 <l-map style="width: 100%; height: 800px;" :zoom="zoom" :center="center">
       <l-tile-layer :url="url" :attribution="attribution"></l-tile-layer>
      
@@ -21,10 +19,17 @@
     </l-map>
 </div>
 
+<div class="vue-leaflet" v-else-if ="Object.keys(markers).length && abletoAdd() && this.noLocation" >
+  <l-map style="width: 100%; height: 800px;" :zoom="zoom" :center="center">
+      <l-tile-layer :url="url" :attribution="attribution"></l-tile-layer>
+      
+    </l-map>
+</div>
+
 <div class="vue-leaflet"  v-else-if="Object.keys(markers).length || !this.hasMarker">
-<v-layout row justify-center>
-    <v-dialog v-model="dialog" persistent max-width="600px"  >
-      <v-card>
+<v-layout row>
+    <v-dialog id="dialog" v-model="dialog" persistent max-width="600px" absolute bottom right> 
+      <v-card> 
         <v-card-title>
           <span class="headline">Add a New Location</span>
         </v-card-title>
@@ -40,16 +45,9 @@
                   label="Legal Location Name*"
                   v-model="title"
                   :rules="nameRules"
+                  :value="editName"
                   required
                 ></v-text-field>
-              </v-flex>
-
-              <v-flex xs12>
-                <v-text-field label="Latitude of the location*" required :value="lat"></v-text-field>
-              </v-flex>
-              
-              <v-flex xs12>
-                <v-text-field label="Longitude of the location*" required :value="lon"></v-text-field>
               </v-flex>
 
               <v-flex xs12>
@@ -58,6 +56,7 @@
                     :items="items"
                     :rules="[v=> v.length > 0 || 'Item is required']"
                     label="Categories*"
+                    :value="editItems"
                     multiple
                     attach=true
                     required
@@ -71,8 +70,8 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="red darken-1" flat @click="dialog = false">Cancel</v-btn>
-          <v-btn color="green darken-1" :disabled="!valid" flat @click="addNewLocation">Add a New Location</v-btn>
+          <v-btn color="red darken-1" flat @click="cancelDialog">Cancel</v-btn>
+          <v-btn color="green darken-1" :disabled="!valid" flat @click="addNewLocation">{{confMsg}}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -80,14 +79,16 @@
 
 
 
-<l-map style="width: 100%; height: 800px; z-index:0;" :zoom="zoom" @click="addLocation" :center="center">
+<l-map :style="styleObject" :zoom="zoom" @click="addLocation" :center="center">
      <l-tile-layer  layerType="base" :url="url" :attribution="attribution"></l-tile-layer> 
       <l-marker 
       v-for="marker in markers"
       :key="marker.id"
+      @click="editMarker(marker.id)"
       :lat-lng.sync="marker.latlng">
-        <l-popup :content="marker.content"></l-popup>
+        <l-popup :content="marker.content" ></l-popup>
       </l-marker>
+      <v-locatecontrol/>
      <v-geosearch :options="geosearchOptions" ></v-geosearch> 
 </l-map>
 
@@ -102,6 +103,8 @@
 import { LMap, LTileLayer, LMarker, LPopup, LControlLayers,LLayerGroup  } from 'vue2-leaflet';
 import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
 import VGeosearch from '@/components/Vue2LeafletGeosearch';
+import { latLng, Icon, icon } from 'leaflet';
+import Vue2LeafletLocatecontrol from './Vue2LeafletLocatecontrol';
 
 export default {
   name: 'VueLeaflet',
@@ -112,7 +115,8 @@ export default {
     LPopup,
     VGeosearch,
     LControlLayers,
-    LLayerGroup 
+    LLayerGroup,
+    'v-locatecontrol': Vue2LeafletLocatecontrol
   },
   props:{
     noLocation: Boolean,
@@ -129,10 +133,14 @@ export default {
       markers: [],
       hasMarker: true,
       childValue: true,
+      addDone: false,
       dialog: false,
       lat:'',
       lon:'',
       title:'',
+      editName: '',
+      confMsg: '',
+      editItems:[],
       categories:[],
       mcategories:[],
       newlocation:'',
@@ -154,6 +162,12 @@ export default {
         showPopup: true,  
         maxMarkers: 10, 
       },
+      styleObject:{
+        width: '100%',
+        height: '800px',
+        cursor: '',
+        'z-index': 0
+      }
     
     }
   }, 
@@ -206,10 +220,6 @@ methods:{
          }else{
             this.hasMarker = true;
          }
-         
-
-
-
     } 
   },
 
@@ -223,6 +233,15 @@ methods:{
          }
       this.markers.push(marker);
         }
+  },
+
+
+  abletoAdd:function(){
+    if(this.ableAdd == true){
+      this.styleObject.cursor = 'crosshair';
+    }else{
+      this.styleObject.cursor = '';
+    }
   },
 
   addNew:function(newlocation){
@@ -260,9 +279,30 @@ methods:{
     if(this.ableAdd == true){
     this.lat = event.latlng.lat;
     this.lon = event.latlng.lng;
+    this.confMsg = 'Add new location';
     this.dialog = true;
     }
+  },
+
+  cancelDialog:function(){
+   this.dialog = false;
+   this.$emit('added', this.addDone);
+  },
+
+  editMarker(id){
+    this.title = this.markers[id-1].content;
+    this.categories = this.mlocations[id-1].categories.list;
+    this.lat = this.markers[id-1].latlng.lat;
+    this.lon = this.markers[id-1].latlng.lng;
+
+    this.confMsg = 'edit the location';
    
+    for ( var i=0; i < this.mlocations[id-1].categories.list.length; ++i ) {
+      this.categories[i] =   this.mlocations[id-1].categories.list[i].name;
+    }  
+
+    this.dialog = true;
+
   },
 
 addNewLocation:function(){
@@ -309,6 +349,8 @@ addNewLocation:function(){
   .then(function () {
     // always executed
   }); 
+
+  this.$emit('added', this.addDone);
   }
   }, 
   
@@ -317,5 +359,14 @@ addNewLocation:function(){
 </script>
 
 <style scoped>
+@import "leaflet/dist/leaflet.css";
+@import "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css";
 
+
+
+.v-dialog__content{
+  justify-content:end;
+  align-items:flex-end;
+  width:35%;
+}
 </style>

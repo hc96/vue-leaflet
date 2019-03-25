@@ -2,8 +2,8 @@
   <div id="app">
   <div id="maps">
 
-   <div class="toggle">
-    <toggle-button :value="true"  width=130 height=30 @change="toggled = $event.value"
+   <div class="toggle" >
+    <toggle-button :value="toggled"  width=130 height=30 @change="toggled = $event.value" :sync="true"
                :labels="{checked: 'Add new locations', unchecked: 'Disable for adding'}"/>
    </div>
 
@@ -16,9 +16,8 @@
    </div>
 
   
-   <div class="map" v-if="!active">
-    
-        <VueLeaflet ref="child" v-on:childByValue="childByValue" :mlocations="location.list" :ableAdd="toggled">
+   <div class="map" v-if="!active" >
+        <VueLeaflet ref="child"  v-on:added="added" v-on:childByValue="childByValue"  :mlocations="location.list" :ableAdd="toggled" >
         </VueLeaflet>
    </div>
    
@@ -61,7 +60,7 @@ export default {
     categories: '',
     newLocation: '',
     dialog: true,
-    toggled: true
+    toggled: false
   }),
    apollo: {
       location: gql`
@@ -91,6 +90,9 @@ export default {
       },
       childByValue:function(childValue){
         this.active = childValue
+      },
+      added:function(addDone){
+        this.toggled = addDone;
       },
       getResult: function(message){
         this.$refs.child.addMarker(message);
@@ -131,4 +133,6 @@ width: 100%;
   margin-bottom: 5px;
   
 }
+
+
 </style>
