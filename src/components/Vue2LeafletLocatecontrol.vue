@@ -12,6 +12,8 @@ import "leaflet.locatecontrol";
 const props = {
   options: {
     type: Object,
+    lat:String,
+
     default() { return {}; },
   },
   visible: {
@@ -28,12 +30,25 @@ export default {
 
   data() {
     return {
-      ready: false
+      ready: false,
+      setLat: 'hahahhaah',
     }
   },
 
   beforeDestroy() {
     this.parentContainer.removeLayer(this);
+  },
+
+  watch:{
+  
+  },
+
+  methods:{
+    latlng:function(){
+      this.setLat = getLatlng();
+      this.options.lat='dfsdf';
+      this.$emit('getLat', this.setLat);
+    },
   },
 
   mounted() {
