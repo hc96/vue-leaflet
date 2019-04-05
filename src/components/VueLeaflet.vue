@@ -37,7 +37,7 @@
         <v-card-title class="headline">Delete this marker?</v-card-title>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="green darken-1" flat @click="delDialog = false">No</v-btn>
+          <v-btn color="red darken-1" flat @click="delDialog = false">No</v-btn>
           <v-btn color="green darken-1" flat @click="deleteMarker">Yes</v-btn>
         </v-card-actions>
       </v-card>
@@ -78,16 +78,31 @@
                   </v-flex>
 
                   <v-flex xs12>
-                    <v-select
+                   <v-combobox
                       v-model="vcategories"
                       :items="items"
                       :rules="[v=> v.length > 0 || 'Item is required']"
                       label="Categories*"
-                      multiple
+                      chips
+                      clearable
+                      prepend-icon="filter_list"
+                      solo
                       attach="true"
-                      required
-                    ></v-select>
+                      multiple
+                    >
+                    <template v-slot:selection="data">
+                    <v-chip
+                        :selected="data.selected"
+                        close
+                        @input="remove(data.item)"
+                      >
+                          <strong>{{ data.item }}</strong>&nbsp;
+                          <span>(category)</span>
+                        </v-chip>
+                      </template>
+                    </v-combobox>
                   </v-flex>
+
                 </v-layout>
               </v-container>
             </v-form>
@@ -115,22 +130,23 @@
       :center="userLocation || center"
       @locationfound="onLocationFound"
       @update:center="centerUpdate"
+      @geosearch_foundlocations ="onLocationFound"
     >
       <l-tile-layer layerType="base" :url="url" :attribution="attribution"></l-tile-layer>
       <l-marker
         v-for="marker in markers"
         :key="marker.id"
         @click="editMarker(marker.id)"
-        ref="marker"
+        ref="marker.content"
         :lat-lng.sync="marker.latlng"
         :icon="marker.icon"
       >
         <l-popup>
           <div>
-             {{marker.content}}
-            <p v-show="showParagraph">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed pretium nisl, ut sagittis sapien. Sed vel sollicitudin nisi. Donec finibus semper metus id malesuada.
-            </p>
+             <p>{{marker.content}}</p>
+            <span v-show="showParagraph" v-for="category in vcategories" :key="category.id">
+                  {{ category }}
+            </span>
           </div>
         </l-popup>
       </l-marker>
@@ -154,6 +170,7 @@ import Vue2LeafletLocatecontrol from "./Vue2LeafletLocatecontrol";
 
 delete L.Icon.Default.prototype._getIconUrl;
 
+
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: require("leaflet/dist/images/marker-icon-2x.png")
 });
@@ -175,7 +192,8 @@ export default {
   props: {
     noLocation: Boolean,
     mlocations: Array,
-    ableAdd: Boolean
+    ableAdd: Boolean,
+    search: String
   },
   data() {
     return {
@@ -245,6 +263,12 @@ export default {
     };
   },
   methods: {
+    //remove the cateogory from the chips
+    remove (item) {
+        this.vcategories.splice(this.vcategories.indexOf(item), 1)
+        this.vcategories = [...this.vcategories]
+      },
+
     deleteDialog() {
       console.log("the name of deleting marker is :" + this.mlocations[this.id-1].title)
       this.delDialog = true;
@@ -634,7 +658,29 @@ export default {
     }
   },
 
+  watch:{
+    search:{
+      handler(newSearch, oldSearch){
+      // search the marker
+      if(this.search != undefined && this.markers.length != 0){
+      let index
+      for(index in this.markers){
+           if(this.search == this.markers[index].content){
+             const map = this.$refs.map.mapObject;
+             map.setView(this.markers[index].latlng, 16);
+            //  let m = this.markers[index].content;
+            //  this.$refs.m.mapObject.openPopup();
+           }
+       }
+    }
+      
+      }
+    }
+
+  },
+
   mounted: function() {
+    // locate the user
     var self = this;
 
     const map = self.$refs.map.mapObject;
@@ -658,6 +704,8 @@ export default {
 
       L.circle(e.latlng, radius).addTo(map);
     }
+
+
   }
 };
 </script>
@@ -671,4 +719,5 @@ export default {
   align-items: flex-end;
   width: 35%;
 }
+
 </style>
