@@ -121,7 +121,6 @@
         </v-card>
       </v-dialog>
     </v-layout>
-
     <l-map
       :style="styleObject"
       :zoom="zoom"
@@ -137,7 +136,7 @@
         v-for="marker in markers"
         :key="marker.id"
         @click="editMarker(marker.id)"
-        ref="marker.content"
+        ref="marker"
         :lat-lng.sync="marker.latlng"
         :icon="marker.icon"
       >
@@ -151,7 +150,8 @@
         </l-popup>
       </l-marker>
       <v-locatecontrol ref="control" v-on:getLat="getLat"></v-locatecontrol>
-      <v-geosearch :options="geosearchOptions"></v-geosearch>
+      <v-geosearch :options="geosearchOptions" v-on:parentSearch="parentSearch">
+      </v-geosearch>
     </l-map>
 
     <notifications group="notification" position="bottom right"/>
@@ -175,6 +175,7 @@ L.Icon.Default.mergeOptions({
   iconRetinaUrl: require("leaflet/dist/images/marker-icon-2x.png")
 });
 
+
 export default {
   name: "VueLeaflet",
   components: {
@@ -193,7 +194,6 @@ export default {
     noLocation: Boolean,
     mlocations: Array,
     ableAdd: Boolean,
-    search: String
   },
   data() {
     return {
@@ -223,6 +223,7 @@ export default {
       vcategories: [],
       newLocation: null,
       childLat: "",
+      search:'',
       valid: true,
       nameRules: [v => !!v || "Name is required"],
       items: ["restaurants", "cinemas", "bars", "supermarkets"],
@@ -232,7 +233,7 @@ export default {
         autoCompleteDelay: 250,
         searchLabel: "Enter the place...",
         showPopup: true,
-        maxMarkers: 10
+        maxMarkers: 10,
       },
       styleObject: {
         width: "100%",
@@ -243,26 +244,19 @@ export default {
       defaultIcon: L.icon({
         iconUrl:
           "https://raw.githubusercontent.com/hc96/vue-leaflet/master/icons/supermarket.png",
-        iconSize: [30, 40],
-        shadowSize: [50, 64],
-        iconAnchor: [22, 94],
-        shadowAnchor: [4, 62],
-        popupAnchor: [-3, -76]
-      }),
-      selectedIcon: L.icon({
-        iconUrl:
-          "https://raw.githubusercontent.com/hc96/vue-leaflet/master/icons/restaurant.png",
-        shadowUrl: "http://leafletjs.com/examples/custom-icons/leaf-shadow.png",
-        iconSize: [38, 95],
-        shadowSize: [50, 64],
-        iconAnchor: [22, 94],
-        shadowAnchor: [4, 62],
-        popupAnchor: [-3, -76]
+        iconSize: [10, 10],
+        iconAnchor: [0, 0],
+        popupAnchor: [10, 5]
       }),
       showParagraph: true,
     };
   },
   methods: {
+     parentSearch: function (searchValue) {
+        // childValue is the value from the child component
+        this.search = searchValue;
+        //console.log("the user input of search is :" + this.search)
+      },
     //remove the cateogory from the chips
     remove (item) {
         this.vcategories.splice(this.vcategories.indexOf(item), 1)
@@ -445,25 +439,37 @@ export default {
         case "restaurants":
           this.defaultIcon = L.icon({
             iconUrl:
-              "https://raw.githubusercontent.com/hc96/vue-leaflet/master/icons/restaurant.png"
+              "https://raw.githubusercontent.com/hc96/vue-leaflet/master/icons/restaurant.png",
+              iconSize: [30, 35],
+              iconAnchor: [0, 0],
+              popupAnchor: [13, 1]
           });
           break;
         case "cinemas":
           this.defaultIcon = L.icon({
             iconUrl:
-              "https://raw.githubusercontent.com/hc96/vue-leaflet/master/icons/cinemas.png"
+              "https://raw.githubusercontent.com/hc96/vue-leaflet/master/icons/cinemas.png",
+              iconSize: [30, 35],
+              iconAnchor: [0, 0],
+              popupAnchor: [13, 1]
           });
           break;
         case "bars":
           this.defaultIcon = L.icon({
             iconUrl:
-              "https://raw.githubusercontent.com/hc96/vue-leaflet/master/icons/bars.png"
+              "https://raw.githubusercontent.com/hc96/vue-leaflet/master/icons/bars.png",
+              iconSize: [30, 35],
+              iconAnchor: [0, 0],
+              popupAnchor: [13, 1]
           });
           break;
         case "supermarkets":
           this.defaultIcon = L.icon({
             iconUrl:
-              "https://raw.githubusercontent.com/hc96/vue-leaflet/master/icons/supermarket.png"
+              "https://raw.githubusercontent.com/hc96/vue-leaflet/master/icons/supermarket.png",
+              iconSize: [30, 35],
+              iconAnchor: [0, 0],
+              popupAnchor: [13, 1]
           });
           break;
       }
@@ -662,14 +668,14 @@ export default {
     search:{
       handler(newSearch, oldSearch){
       // search the marker
-      if(this.search != undefined && this.markers.length != 0){
+      if(this.search != '' && this.markers.length != 0){
       let index
       for(index in this.markers){
            if(this.search == this.markers[index].content){
-             const map = this.$refs.map.mapObject;
+             let refMarker = 'element' + this.markers[index].id;
+             const map = this.$refs["map"].mapObject;
              map.setView(this.markers[index].latlng, 16);
-            //  let m = this.markers[index].content;
-            //  this.$refs.m.mapObject.openPopup();
+             this.$refs.marker[index].mapObject.openPopup();
            }
        }
     }
@@ -704,6 +710,7 @@ export default {
 
       L.circle(e.latlng, radius).addTo(map);
     }
+
 
 
   }
