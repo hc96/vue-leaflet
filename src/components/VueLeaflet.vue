@@ -132,6 +132,7 @@
       @geosearch_foundlocations ="onLocationFound"
     >
       <l-tile-layer layerType="base" :url="url" :attribution="attribution"></l-tile-layer>
+       <v-marker-cluster :options="clusterOptions" @clusterclick="click()">
       <l-marker
         v-for="marker in markers"
         :key="marker.id"
@@ -149,6 +150,7 @@
           </div>
         </l-popup>
       </l-marker>
+      </v-marker-cluster>
       <v-locatecontrol ref="control" v-on:getLat="getLat"></v-locatecontrol>
       <v-geosearch :options="geosearchOptions" v-on:parentSearch="parentSearch">
       </v-geosearch>
@@ -167,6 +169,7 @@ import { GeoSearchControl, OpenStreetMapProvider } from "leaflet-geosearch";
 import VGeosearch from "@/components/Vue2LeafletGeosearch";
 import L, { latLng, Icon, icon } from "leaflet";
 import Vue2LeafletLocatecontrol from "./Vue2LeafletLocatecontrol";
+import Vue2LeafletMarkerCluster from './Vue2LeafletMarkercluster'
 
 delete L.Icon.Default.prototype._getIconUrl;
 
@@ -188,7 +191,8 @@ export default {
     LLayerGroup,
     LTooltip,
     LIcon,
-    "v-locatecontrol": Vue2LeafletLocatecontrol
+    "v-locatecontrol": Vue2LeafletLocatecontrol,
+    'v-marker-cluster': Vue2LeafletMarkerCluster
   },
   props: {
     noLocation: Boolean,
@@ -244,14 +248,18 @@ export default {
       defaultIcon: L.icon({
         iconUrl:
           "https://raw.githubusercontent.com/hc96/vue-leaflet/master/icons/supermarket.png",
-        iconSize: [10, 10],
+        iconSize: [30, 35],
         iconAnchor: [0, 0],
-        popupAnchor: [10, 5]
+        popupAnchor: [13, 1]
       }),
       showParagraph: true,
+      clusterOptions: {},
     };
   },
   methods: {
+    click: function (e) {
+        //alert("clusterclick")
+      },
      parentSearch: function (searchValue) {
         // childValue is the value from the child component
         this.search = searchValue;
@@ -686,7 +694,26 @@ export default {
   },
 
   mounted: function() {
-    // locate the user
+    
+    setTimeout(() => {
+        console.log('done')
+        this.$nextTick(() =>{
+          this.clusterOptions = { 
+            disableClusteringAtZoom: 11,
+            // iconCreateFunction: (cluster) => {
+            //         const html = `<span>${cluster.getChildCount()}</span>`;
+            //         return L.divIcon({
+            //             className: `custom-cluster-icon`,
+            //             html,
+            //             iconSize: [48, 52],
+            //             iconAnchor: [24, 52]
+            //         });
+            //     }
+          }
+        });
+      }, 5000);
+
+// locate the user
     var self = this;
 
     const map = self.$refs.map.mapObject;
@@ -709,7 +736,7 @@ export default {
         .openPopup();
 
       L.circle(e.latlng, radius).addTo(map);
-    }
+    };
 
 
 
@@ -717,9 +744,11 @@ export default {
 };
 </script>
 
-<style scoped>
+<style>
 @import "leaflet/dist/leaflet.css";
 @import "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css";
+@import "leaflet.markercluster/dist/MarkerCluster.css";
+@import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
 .v-dialog__content {
   justify-content: end;
