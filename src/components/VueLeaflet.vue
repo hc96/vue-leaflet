@@ -46,7 +46,7 @@
 
   <!-- dialog for adding and editing the markers -->
     <v-layout row>
-      <v-dialog id="dialog" v-model="dialog" persistent max-width="600px" style="scoped">
+      <v-dialog id="dialog" v-model="dialog" persistent max-width="600px">
         <v-card>
     <!-- floating button -->
           <v-btn
@@ -254,6 +254,7 @@ export default {
       }),
       showParagraph: true,
       clusterOptions: {},
+      user: ''
     };
   },
   methods: {
@@ -282,6 +283,7 @@ export default {
               params: {
                 name: this.mlocations[this.id-1].title,
                 delete: true,
+                user: this.user,
               }
             })
             .then(response => {
@@ -307,6 +309,7 @@ export default {
 
 
       this.delDialog = false;
+      this.dialog = false;
       
     },
 
@@ -576,7 +579,8 @@ export default {
                 name: this.title,
                 latitude: this.lat,
                 longitude: this.lon,
-                categories: this.vcategories
+                categories: this.vcategories,
+                user: this.user,
               }
             })
             .then(response => {
@@ -613,7 +617,8 @@ export default {
                 name: this.title,
                 latitude: this.lat.substr(0, 7),
                 longitude: this.lon.substr(0, 7),
-                categories: this.vcategories
+                categories: this.vcategories,
+                user: this.user,
               }
             })
             .then(response => {
@@ -694,6 +699,7 @@ export default {
   },
 
   mounted: function() {
+    this.user = sessionStorage.getItem('user');
 
   // marker cluster  
     setTimeout(() => {

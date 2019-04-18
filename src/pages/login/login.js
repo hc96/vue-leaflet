@@ -5,6 +5,9 @@ import Vuetify from 'vuetify';
 import 'vuetify/dist/vuetify.min.css';
 import 'bootstrap'
 import 'bootstrap/dist/css/bootstrap.min.css'
+import Notifications from 'vue-notification';
+
+Vue.use(Notifications)
 
 Vue.config.productionTip = false
 

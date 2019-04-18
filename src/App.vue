@@ -41,6 +41,7 @@
      </div>
 
   </div>
+  <notifications group="lgNotification" position="top center" :max="3" :width="500"/>
 
   </div>
 </template>
@@ -112,7 +113,12 @@ export default {
   //get the session
     this.user = sessionStorage.getItem('user');
     console.log("the session user :"+this.user)
-    
+      this.$notify({
+                 group: "lgNotification",
+                 type: "success",
+                 title: "Dear "+this.user+",",
+                 text: "WELCOME TO THE VUE-LEAFLET!"
+               });
     
     }
 }
