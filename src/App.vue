@@ -1,9 +1,12 @@
 <template>
   <div id="app">
+  <!-- search box -->
+   <!-- <a href="login.html">Login</a>
+    <router-view/> -->
+  <!-- search box -->
   <div id="maps">
-
    <div class="toggle" >
-    <toggle-button :value="toggled"  width=130 height=30 @change="toggled = $event.value" :sync="true"
+    <toggle-button :value="toggled"  :width="130" :height="30" @change="toggled = $event.value" :sync="true"
                :labels="{checked: 'Add new locations', unchecked: 'Disable for adding'}"/>
    </div>
 
@@ -17,11 +20,10 @@
 
   
    <div class="map" v-if="!active" >
-        <VueLeaflet ref="child"  v-on:added="added" v-on:childByValue="childByValue"  :mlocations="location.list" :ableAdd="toggled" >
+        <VueLeaflet ref="child"  v-on:added="added" v-on:childByValue="childByValue"  :mlocations="location.list" :ableAdd="toggled" :search="searchMarker" >
         </VueLeaflet>
    </div>
    
-
 
    <div  v-else-if="!value && active">
       <md-dialog-confirm
@@ -60,12 +62,15 @@ export default {
     categories: '',
     newLocation: '',
     dialog: true,
-    toggled: false
+    toggled: false,
+    searchMarker:'',
+    user:''
   }),
+
    apollo: {
       location: gql`
       {
-       location {
+       location(s:"has_parent=${sessionStorage.getItem('user')}") {
           list {
           title
           lat
@@ -78,10 +83,14 @@ export default {
            }
         }
       }
-      `
+      `,
   },
 
   methods: {
+     showMarker(){
+       alert(this.searchMarker);
+
+     },
       onConfirm () {
         this.value = 'Agreed'
       },
@@ -97,16 +106,21 @@ export default {
       getResult: function(message){
         this.$refs.child.addMarker(message);
       },
-      display:function(event){
-        this.newLocation = '{\"title\":\"'+this.name+'\",\"lat\":\"'+this.latitude+'\",\"lon\":\"'+this.longitude+'\",\"categories\":{\"list\":[{\"name\":\"'+this.categories+'\"}]}}';
-        this.$refs.child.addNew(this.newLocation);
-        alert(this.newLocation);
-      },
+    },
+  
+    mounted: function() {
+  //get the session
+    this.user = sessionStorage.getItem('user');
+    console.log("the session user :"+this.user)
+    
+    
     }
 }
 </script>
 
 <style>
+
+
 #app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -134,5 +148,27 @@ width: 100%;
   
 }
 
+      #main {
+          margin-left: auto;
+          margin-right: auto;
+          width: 80%;
+          max-width: 800px;
+          border: 2px solid #f00;
+          background-color: #fff;
+          font-family: sans-serif;
+          font-size: 12px;
+      }
+      #head {
+          text-align: right;
+          padding: 20px;
+          position: relative;
+      }
+      #searchBox {
+          width: 100%;
+      }
+      /** let's modify the default border size of the unibox suggest box. Note how the size of the suggest box still stays as wide as the input. */
+      #unibox-suggest-box {
+          border-width: 10px;
+      }
 
 </style>

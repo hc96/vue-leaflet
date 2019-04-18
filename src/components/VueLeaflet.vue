@@ -46,7 +46,7 @@
 
   <!-- dialog for adding and editing the markers -->
     <v-layout row>
-      <v-dialog id="dialog" v-model="dialog" persistent max-width="600px">
+      <v-dialog id="dialog" v-model="dialog" persistent max-width="600px" style="scoped">
         <v-card>
     <!-- floating button -->
           <v-btn
@@ -694,21 +694,13 @@ export default {
   },
 
   mounted: function() {
-    
+
+  // marker cluster  
     setTimeout(() => {
         console.log('done')
         this.$nextTick(() =>{
           this.clusterOptions = { 
             disableClusteringAtZoom: 11,
-            // iconCreateFunction: (cluster) => {
-            //         const html = `<span>${cluster.getChildCount()}</span>`;
-            //         return L.divIcon({
-            //             className: `custom-cluster-icon`,
-            //             html,
-            //             iconSize: [48, 52],
-            //             iconAnchor: [24, 52]
-            //         });
-            //     }
           }
         });
       }, 5000);
@@ -750,7 +742,7 @@ export default {
 @import "leaflet.markercluster/dist/MarkerCluster.css";
 @import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
-.v-dialog__content {
+div .v-dialog__content {
   justify-content: end;
   align-items: flex-end;
   width: 35%;
