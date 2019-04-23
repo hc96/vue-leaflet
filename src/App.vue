@@ -19,26 +19,10 @@
    </div>
 
   
-   <div class="map" v-if="!active" >
+   <div class="map">
         <VueLeaflet ref="child"  v-on:added="added" v-on:childByValue="childByValue"  :mlocations="location.list" :ableAdd="toggled" :search="searchMarker" >
         </VueLeaflet>
    </div>
-   
-
-   <div  v-else-if="!value && active">
-      <md-dialog-confirm
-      :md-active.sync="active"
-      md-title="Use Google's location service?"
-      md-content="Opppps... <br>  <strong>No location found, please try again.</strong>"
-      md-confirm-text="Continue"
-      @md-cancel="onCancel"
-      @md-confirm="onConfirm" />    
-   </div>
-
-     <div class="map" v-if="value">
-        <VueLeaflet ref="child" :noLocation="locations" :mlocations="location.list"  :ableAdd="toggled">
-        </VueLeaflet>
-     </div>
 
   </div>
   <notifications group="lgNotification" position="top center" :max="3" :width="500"/>

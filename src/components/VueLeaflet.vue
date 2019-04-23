@@ -1,36 +1,7 @@
 <template>
-  <div
-    class="vue-leaflet"
-    v-if="!Object.keys(markers).length && !this.noLocation && this.hasMarker && addMarkers()"
-  >
-    <l-map style="width: 100%; height: 800px;" :zoom="zoom" :center="center">
-      <l-tile-layer :url="url" :attribution="attribution"></l-tile-layer>
-    </l-map>
-  </div>
 
-  <div
-    class="vue-leaflet"
-    v-else-if="!Object.keys(markers).length && !this.noLocation && this.hasMarker && showAlert()"
-  ></div>
-
-  <div class="vue-leaflet" v-else-if="!Object.keys(markers).length && this.noLocation">
-    <l-map style="width: 100%; height: 800px;" :zoom="zoom" :center="center">
-      <l-tile-layer :url="url" :attribution="attribution"></l-tile-layer>
-    </l-map>
-  </div>
-
-  <div
-    class="vue-leaflet"
-    v-else-if="Object.keys(markers).length && abletoAdd() && this.noLocation"
-  >
-    <l-map style="width: 100%; height: 800px;" :zoom="zoom" :center="center">
-      <l-tile-layer :url="url" :attribution="attribution"></l-tile-layer>
-    </l-map>
-  </div>
-
-  <div class="vue-leaflet" v-else-if="Object.keys(markers).length || !this.hasMarker">
-
-    <!-- dialog for deleting the markers -->
+  <div class="vue-leaflet">
+<!-- dialog for deleting the markers -->
     <v-layout row justify-center>
     <v-dialog v-model="delDialog" persistent max-width="400">
       <v-card>
@@ -160,9 +131,6 @@
   </div>
 </template>
 
-
-
-
 <script>
 import {LMap,LTileLayer,LMarker,LPopup,LControlLayers,LLayerGroup,LIcon,LTooltip} from "vue2-leaflet";
 import { GeoSearchControl, OpenStreetMapProvider } from "leaflet-geosearch";
@@ -172,7 +140,6 @@ import Vue2LeafletLocatecontrol from "./Vue2LeafletLocatecontrol";
 import Vue2LeafletMarkerCluster from './Vue2LeafletMarkercluster'
 
 delete L.Icon.Default.prototype._getIconUrl;
-
 
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: require("leaflet/dist/images/marker-icon-2x.png")
@@ -277,8 +244,9 @@ export default {
       this.delDialog = true;
     },
 
-    deleteMarker:function(){
-     
+
+// delete the markers
+    deleteMarker:function(){ 
        axios.get("http://carabackend.local/form/", {
               params: {
                 name: this.mlocations[this.id-1].title,
@@ -322,19 +290,39 @@ export default {
       this.childLat = setLat;
     },
 
-    showAlert: function() {
-      //used to popup the window showing 'no locations found'
-      this.$emit("childByValue", this.childValue);
-      alert(this.noLocation);
-    },
-
     centerUpdate: function(center) {
       this.center = center;
     },
 
-    addMarker: function(msgs) {
-      //display the markers of specific category
 
+// add all the markers when initialization  
+    addAllMarkers: function(){
+      if(this.mlocations != undefined){
+        console.log("the locations received from processwire :" + this.mlocations.length)
+        for (let i = 0; i < this.mlocations.length; ++i) {
+        console.log(
+          "the first category of this marker is :" +
+            this.mlocations[i].categories.list[0].name
+        );
+        let category = this.mlocations[i].categories.list[0].name;
+        this.changeIcon(category);
+
+        let marker = {
+          id: i + 1,
+          latlng: L.latLng(this.mlocations[i].lat, this.mlocations[i].lon),
+          content: this.mlocations[i].title,
+          icon: this.defaultIcon
+        };
+
+        this.markers.push(marker);
+      }
+
+      console.log("The length of the markers :" + this.markers.length);
+      }
+    },
+
+//display the markers of specific category
+    addMarker: function(msgs) {
       this.msg = msgs;
       var length = this.mlocations.length;
       console.log("the category you clicked is :" + msgs);
@@ -351,6 +339,7 @@ export default {
       } else if (msgs == "all") {
         this.hasMarker = true;
         this.markers.splice(0, this.markers.length);
+        this.addAllMarkers();
         //this.$options.method.addmarkers();
       } else {
         this.markers.splice(0, this.markers.length);
@@ -421,30 +410,7 @@ export default {
       }
     },
 
-    addMarkers: function() {
-      //add all the markers when initialization
-      //alert(this.mlocations)
-      for (let i = 0; i < this.mlocations.length; ++i) {
-        console.log(
-          "the first category of this marker is :" +
-            this.mlocations[i].categories.list[0].name
-        );
-        let category = this.mlocations[i].categories.list[0].name;
-        this.changeIcon(category);
-
-        let marker = {
-          id: i + 1,
-          latlng: L.latLng(this.mlocations[i].lat, this.mlocations[i].lon),
-          content: this.mlocations[i].title,
-          icon: this.defaultIcon
-        };
-
-        this.markers.push(marker);
-      }
-
-      console.log("The length of the markers :" + this.markers.length);
-    },
-
+// change icon of markers within different categories
     changeIcon: function(category) {
       switch (category) {
         case "restaurants":
@@ -486,17 +452,8 @@ export default {
       }
     },
 
-    abletoAdd: function() {
-      //used to change the shape of the cursor
-      if (this.ableAdd == true) {
-        this.styleObject.cursor = "crosshair";
-      } else {
-        this.styleObject.cursor = "";
-      }
-    },
-
-    addLocation(event) {
-      //popup the form dialog, get the lat and lon of clicked point
+// popup the form dialog for adding the new locations
+    addLocation(event) {   
       if (this.ableAdd == true) {
         this.lat = event.latlng.lat;
         this.lon = event.latlng.lng;
@@ -508,13 +465,15 @@ export default {
       }
     },
 
+// the toggle automatically turn off once cancel
     cancelDialog: function() {
       this.dialog = false;
       this.$emit("added", this.addDone);
     },
 
+
+// display the clicked marker information on the dialog
     editMarker(id) {
-      //display the clicked marker information on the dialog
       //get the new data of clicked marker
       this.title = this.mlocations[id - 1].title;
       this.vcategories = [];
@@ -535,8 +494,8 @@ export default {
       this.dialog = true;
     },
 
+  // add new location or edit the location to the processwire
     addNewLocation: function() {
-      // add new location or edit the location if 'confirm' button clicked
       this.hasMarker = true;
       var len = this.mlocations.length;
 
@@ -652,56 +611,42 @@ export default {
     }
   },
 
-  created() {},
-
-  beforeMount: function() {
-    var self = this;
-
-    const map = self.$refs.map.mapObject;
-
-    map.locate({
-      setView: true,
-      enableHighAccuracy: true,
-      maximumAge: 60000
-    });
-    map.on("locationfound", onLocationFound);
-    function onLocationFound(e) {
-      var radius = e.accuracy / 2;
-
-      L.marker(e.latlng)
-        .addTo(map)
-        .bindPopup("You are within " + radius + " meters from this point")
-        .openPopup();
-
-      L.circle(e.latlng, radius).addTo(map);
-    }
-  },
-
   watch:{
-    search:{
-      handler(newSearch, oldSearch){
-      // search the marker
-      if(this.search != '' && this.markers.length != 0){
-      let index
-      for(index in this.markers){
-           if(this.search == this.markers[index].content){
-             let refMarker = 'element' + this.markers[index].id;
-             const map = this.$refs["map"].mapObject;
-             map.setView(this.markers[index].latlng, 16);
-             this.$refs.marker[index].mapObject.openPopup();
-           }
-       }
-    }
-      
+  // used to change the shape of the cursor 
+    ableAdd:{
+      handler(newValue, oldValue){
+        if (this.ableAdd == true) {
+        this.styleObject.cursor = "crosshair";
+      } else {
+        this.styleObject.cursor = "";
+      } 
       }
-    }
+    },
 
+// add all the markers when initialization
+    mlocations:{
+      handler(newValue, oldValue){
+        if (this.mlocations != '') {
+         this.addAllMarkers();
+        }else{
+          this.$notify({
+            group: "notification",
+            type: "warn",
+            title: "Important message",
+            text: "No locations found..."
+          });
+          
+        }
+      },
+    },
   },
 
   mounted: function() {
+
+// store the user session 
     this.user = sessionStorage.getItem('user');
 
-  // marker cluster  
+// marker cluster  
     setTimeout(() => {
         console.log('done')
         this.$nextTick(() =>{
@@ -713,7 +658,6 @@ export default {
 
 // locate the user
     var self = this;
-
     const map = self.$refs.map.mapObject;
 
     map.locate({
@@ -721,7 +665,6 @@ export default {
       enableHighAccuracy: true,
       maximumAge: 60000
     });
-
     map.on("locationfound", onLocationFound);
     function onLocationFound(e) {
       var radius = e.accuracy / 2;
@@ -735,9 +678,6 @@ export default {
 
       L.circle(e.latlng, radius).addTo(map);
     };
-
-
-
   }
 };
 </script>
@@ -748,6 +688,7 @@ export default {
 @import "leaflet.markercluster/dist/MarkerCluster.css";
 @import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
+/* put the dialog in the corner */
 div .v-dialog__content {
   justify-content: end;
   align-items: flex-end;
