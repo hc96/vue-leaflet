@@ -170,6 +170,7 @@ export default {
     return {
       zoom: 12,
       center: L.latLng(51.063072, 13.736793),
+      bound: L.bounds(),
       url: "http://{s}.tile.osm.org/{z}/{x}/{y}.png",
       attribution:'© <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
       marker: L.latLng(51.0268533, 13.734821),
@@ -224,6 +225,8 @@ export default {
       user: ''
     };
   },
+
+
   methods: {
     click: function (e) {
         //alert("clusterclick")
@@ -300,12 +303,7 @@ export default {
       if(this.mlocations != undefined){
         console.log("the locations received from processwire :" + this.mlocations.length)
         for (let i = 0; i < this.mlocations.length; ++i) {
-        console.log(
-          "the first category of this marker is :" +
-            this.mlocations[i].categories.list[0].name
-        );
-        let category = this.mlocations[i].categories.list[0].name;
-        this.changeIcon(category);
+      
 
         let marker = {
           id: i + 1,
@@ -678,6 +676,19 @@ export default {
 
       L.circle(e.latlng, radius).addTo(map);
     };
+    console.log("the bounds of the location :" + map.getBounds().getEast() + "," + map.getBounds().getWest() + "," + map.getBounds().getSouth() + "," + map.getBounds().getNorth())
+     this.bound = map.getBounds();
+     this.$emit("parentCenter", this.center);
+
+    map.on('geosearch_foundlocations', function (e) {
+    e.Locations.forEach(function (Location) {
+        // Location.Label = full address
+        // Location.X = longitude
+        // Location.Y = latitude
+        // Location.bounds = boundaries
+        console.log("the coordinate of searched location is :" + Location.X + " , " + Location.Y)
+    });
+});
   }
 };
 </script>
