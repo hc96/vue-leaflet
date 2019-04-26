@@ -43,6 +43,9 @@ export default {
     locations: true,
     location: [],
     userCenter: Object,
+    centerBound:{
+    },
+    lat:'',
     msg: '',
     name: '',
     latitude: '',
@@ -60,7 +63,7 @@ export default {
        query(){
          return gql`
         query{
-          location(s:"has_parent=${this.user}, lat>${this.userCenter.lat-15}, lat<${this.userCenter.lat+15}, lon>${this.userCenter.lng-13}, lon<${this.userCenter.lng+15}, limit=false") {
+          location(s:"has_parent=${this.user}, lat>${this.centerBound.south}, lat<${this.centerBound.north}, lon>${this.centerBound.west}, lon<${this.centerBound.east}, limit=false") {
             list{
             title
             lat
@@ -73,10 +76,26 @@ export default {
 
   },
 
-  methods: {
-     parentCenter: function(center){
-       this.userCenter = center;
+    watch:{
+      userCenter:{ 
+      handler(newValue, oldValue){
+        console.log("the center changed :")
+      },    
+    },    
+   
+  },
 
+  methods: {
+     parentCenter: function(bound){
+       this.userCenter = bound;
+       this.centerBound = {
+         west:bound.getWest(),
+         east:bound.getEast(),
+         south:bound.getSouth(),
+         north:bound.getNorth(),
+       }
+
+       console.log("the west of centerBound :" + this.centerBound.west)
      },
 
      showMarker(){

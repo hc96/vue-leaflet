@@ -132,7 +132,7 @@
 </template>
 
 <script>
-import {LMap,LTileLayer,LMarker,LPopup,LControlLayers,LLayerGroup,LIcon,LTooltip} from "vue2-leaflet";
+import {LMap,LTileLayer,LMarker,LCircleMarker,LPopup,LControlLayers,LLayerGroup,LIcon,LTooltip} from "vue2-leaflet";
 import { GeoSearchControl, OpenStreetMapProvider } from "leaflet-geosearch";
 import VGeosearch from "@/components/Vue2LeafletGeosearch";
 import L, { latLng, Icon, icon } from "leaflet";
@@ -152,6 +152,7 @@ export default {
     LMap,
     LTileLayer,
     LMarker,
+    LCircleMarker,
     LPopup,
     VGeosearch,
     LControlLayers,
@@ -169,6 +170,8 @@ export default {
   data() {
     return {
       zoom: 12,
+      mapCenter: Array,
+      centerLat: Number,
       center: L.latLng(51.063072, 13.736793),
       bound: L.bounds(),
       url: "http://{s}.tile.osm.org/{z}/{x}/{y}.png",
@@ -452,6 +455,7 @@ export default {
 
 // popup the form dialog for adding the new locations
     addLocation(event) {   
+      alert(this.mapCenter.lat)
       if (this.ableAdd == true) {
         this.lat = event.latlng.lat;
         this.lon = event.latlng.lng;
@@ -606,10 +610,26 @@ export default {
             });
         }
       }
-    }
+    },
+
+
   },
 
   watch:{
+    //   mapCenter:{ 
+    //   deep: true,
+    //   handler(newValue, oldValue){
+    //     console.log("test when the center changed :" + this.mapCenter.lat)
+    //   },    
+    // },
+
+    mapCenter:{ 
+      handler(newValue, oldValue){
+        console.log("the center changed :" + newValue + ", old center :" + oldValue)
+         this.$emit("parentCenter", this.bound);
+      },    
+    },
+
   // used to change the shape of the cursor 
     ableAdd:{
       handler(newValue, oldValue){
@@ -626,7 +646,7 @@ export default {
       handler(newValue, oldValue){
         if (this.mlocations != '') {
          this.addAllMarkers();
-        }else{
+        }else if(this.mlocations == ''){
           this.$notify({
             group: "notification",
             type: "warn",
@@ -637,9 +657,13 @@ export default {
         }
       },
     },
+    
+   
   },
 
   mounted: function() {
+    var timeoutHandler;
+  
 
 // store the user session 
     this.user = sessionStorage.getItem('user');
@@ -678,7 +702,46 @@ export default {
     };
     console.log("the bounds of the location :" + map.getBounds().getEast() + "," + map.getBounds().getWest() + "," + map.getBounds().getSouth() + "," + map.getBounds().getNorth())
      this.bound = map.getBounds();
-     this.$emit("parentCenter", this.center);
+   //  alert(map.getCenter())
+     this.mapCenter = map.getCenter();
+     this.centerLat = this.mapCenter.lat;
+     
+
+   // move the map  
+  //   map.on('moveend', ()=>{
+  //     this.mapCenter = map.getCenter();
+  //     this.centerLat = this.mapCenter.lat;
+  //     this.bound = map.getBounds();
+  //   	console.log("the center of the map is :" + map.getCenter().lat);
+	// 	//console.log(map.getCenter());
+  // });
+
+  // change the zoom level of the map
+  //  map.on('zoomend', ()=> {
+  //    this.mapCenter = map.getCenter();
+  //    this.centerLat = this.mapCenter.lat;
+  //    this.bound = map.getBounds();
+	//  console.log("the bounds of the location :" + map.getBounds().getEast() + "," + map.getBounds().getWest() + "," + map.getBounds().getSouth() + "," + map.getBounds().getNorth())
+	//  console.log("the current zoom level is :" + map.getZoom());
+  // });
+  
+
+   map.on('zoomend', ()=> {
+      // cancel any timeout currently running
+  window.clearTimeout(timeoutHandler);
+  // create new timeout to fire sesarch function after 500ms (or whatever you like)
+  timeoutHandler = window.setTimeout(()=> {
+    // run some function to get results or update markers or something
+    this.mapCenter = map.getCenter();
+     this.centerLat = this.mapCenter.lat;
+     this.bound = map.getBounds();
+	 console.log("the bounds of the location :" + map.getBounds().getEast() + "," + map.getBounds().getWest() + "," + map.getBounds().getSouth() + "," + map.getBounds().getNorth())
+	 console.log("the current zoom level is :" + map.getZoom());
+  }, 2000);
+     
+  });
+
+  this.$emit("parentCenter", this.bound);
 
     map.on('geosearch_foundlocations', function (e) {
     e.Locations.forEach(function (Location) {
