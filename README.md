@@ -1,6 +1,6 @@
 # vue-leaflet
 
-> a vue.js project
+> an inteactve map based on VueJS and LeafLet
 
 ## Build Setup
 
@@ -20,7 +20,6 @@ App.vue: for the main view
 
 # child components
 VueLeaf.vue: for displaying leaflet map and other user interactions
-Vue2LeafletGeosearch.vue: for search bar
 
 ```
 
@@ -39,12 +38,17 @@ for Notification---popup when clicking on the category which has no locations fo
 # vuetify
 for Form Dialog---click on the map, popup a dialog for user to fill the data of new location, like the location name and categories, along with non-empty validations
 
-# leaflet-geosearch
+# Vue2-leaflet-geosearch
 for Search Bar---search on the map
 
 # vue-apollo
-
 for using GraphQL to request the coordinates and categories from the pages in ProcessWire
+
+# vue2-leaflet-locatecontrol
+for locate the user to the current location
+
+# vue2-leaflet-makercluster
+for grouping nearby markers into single clusters
 
 ```
 
