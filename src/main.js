@@ -4,7 +4,6 @@ import Vue from 'vue'
 import App from './App'
 import router from './router'
 import 'leaflet/dist/leaflet.css';
-import Dialog from '@/components/Dialog'
 import VueLeaflet from '@/components/VueLeaflet'
 import VueMaterial from 'vue-material'
 import 'vue-material/dist/vue-material.min.css'
@@ -13,7 +12,6 @@ import { ApolloClient } from 'apollo-client';
 import { HttpLink } from 'apollo-link-http';
 import { InMemoryCache } from 'apollo-cache-inmemory';
 import VueApollo from 'vue-apollo';
-import gql from 'graphql-tag'
 import 'bootstrap'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import '../node_modules/bootstrap/dist/css/bootstrap.min.css';
@@ -25,7 +23,6 @@ import Notifications from 'vue-notification';
 
 
 
-Vue.component('Dialog',Dialog)
 Vue.component('VueLeaflet',VueLeaflet)
 Vue.use(ToggleButton)
 Vue.use(Notifications)

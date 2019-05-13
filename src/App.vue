@@ -1,10 +1,5 @@
 <template>
   <div id="app">
-  <!-- search box -->
-   <!-- <a href="login.html">Login</a>
-    <router-view/> -->
-  <!-- search box -->
-  
   <div id="maps">
    <div class="toggle" >
     <toggle-button :value="toggled"  :width="130" :height="30" @change="toggled = $event.value" :sync="true"
@@ -21,7 +16,7 @@
 
   
    <div class="map">
-        <VueLeaflet ref="child"  v-on:added="added" v-on:childByValue="childByValue" v-on:parentCenter="parentCenter"  :mlocations="location.list" :ableAdd="toggled" :search="searchMarker" >
+        <VueLeaflet ref="child"  v-on:added="added" v-on:childByValue="childByValue" v-on:parentBound="parentBound" v-on:parentZoom="parentZoom"  :mlocations="location" :ableAdd="toggled" :search="searchMarker" >
         </VueLeaflet>
    </div>
 
@@ -41,6 +36,7 @@ export default {
     active: false,
     value: null,
     locations: true,
+    zoom: Number,
     location: [],
     userCenter: Object,
     centerBound:{
@@ -58,10 +54,12 @@ export default {
     user:'changchang'
   }),
 
-   apollo: {
+   apollo: {   
      location:{
-       query(){
-         return gql`
+      query(){
+        //  why not using zoom level
+     if(this.zoom >= 10){
+      return gql`
         query{
           location(s:"has_parent=${this.user}, lat>${this.centerBound.south}, lat<${this.centerBound.north}, lon>${this.centerBound.west}, lon<${this.centerBound.east}, limit=false") {
             list{
@@ -71,24 +69,109 @@ export default {
             }
           }
         }`;
+         }else if(10 > this.zoom && this.zoom >= 3){
+           return gql`
+            query{
+            l0:location(s:"has_parent=${this.user}, lat>${(this.centerBound.north+this.centerBound.south)/2}, lat<${this.centerBound.north}, lon>${this.centerBound.west}, lon<${this.centerBound.west+(this.centerBound.east-this.centerBound.west)/3}, limit=false") {
+            getTotal
+            }
+            l1:location(s:"has_parent=${this.user}, lat>${(this.centerBound.north+this.centerBound.south)/2}, lat<${this.centerBound.north}, lon>${this.centerBound.west+(this.centerBound.east-this.centerBound.west)/3}, lon<${this.centerBound.west+2*(this.centerBound.east-this.centerBound.west)/3}, limit=false") {
+            getTotal
+            }
+            l2:location(s:"has_parent=${this.user}, lat>${(this.centerBound.north+this.centerBound.south)/2}, lat<${this.centerBound.north}, lon>${this.centerBound.west+2*(this.centerBound.east-this.centerBound.west)/3}, lon<${this.centerBound.east}, limit=false") {
+            getTotal
+            }
+            l3:location(s:"has_parent=${this.user}, lat>${this.centerBound.south}, lat<${(this.centerBound.north+this.centerBound.south)/2}, lon>${this.centerBound.west}, lon<${this.centerBound.west+(this.centerBound.east-this.centerBound.west)/3}, limit=false") {
+            getTotal
+            }
+            l4:location(s:"has_parent=${this.user}, lat>${this.centerBound.south}, lat<${(this.centerBound.north+this.centerBound.south)/2}, lon>${this.centerBound.west+(this.centerBound.east-this.centerBound.west)/3}, lon<${this.centerBound.west+2*(this.centerBound.east-this.centerBound.west)/3}, limit=false") {
+            getTotal
+            }
+            l5:location(s:"has_parent=${this.user}, lat>${this.centerBound.south}, lat<${(this.centerBound.north+this.centerBound.south)/2}, lon>${this.centerBound.west+2*(this.centerBound.east-this.centerBound.west)/3}, lon<${this.centerBound.east}, limit=false") {
+            getTotal
+           }     
+        }`;}
+        // else if(7 > this.zoom >= 5){
+
+        //  }else if(5 > this.zoom >= 3){
+
+        //  }
+         else if(3 > this.zoom >= 1){
+         return gql`
+            query{
+            location(s:"has_parent=${this.user}, lat>${this.centerBound.south}, lat<${this.centerBound.north}, lon>${this.centerBound.west}, lon<${this.centerBound.east}, limit=false") {
+            getTotal
+          }
+        }`;
+         }
+       },
+       update(data) {
+         if(this.zoom >= 10){
+           return data;
+         }else if(this.zoom < 10){
+          //  alert(JSON.parse('{"location":'+JSON.stringify(data)+'}'))
+          //TODO: add latitude and longitude
+            data.l0.lat = 3/4*this.centerBound.north+1/4*this.centerBound.south;
+            data.l0.lon = this.centerBound.west+(this.centerBound.east-this.centerBound.west)/6;
+            data.l1.lat = 3/4*this.centerBound.north+1/4*this.centerBound.south;
+            data.l1.lon = this.centerBound.west+2*(this.centerBound.east-this.centerBound.west)/6;
+            data.l2.lat = 3/4*this.centerBound.north+1/4*this.centerBound.south;
+            data.l2.lon = this.centerBound.east-(this.centerBound.east-this.centerBound.west)/6;
+            data.l3.lat = 1/4*this.centerBound.north+3/4*this.centerBound.south;
+            data.l3.lon = this.centerBound.west+(this.centerBound.east-this.centerBound.west)/6;
+            data.l4.lat = 1/4*this.centerBound.north+3/4*this.centerBound.south;
+            data.l4.lon = this.centerBound.west+2*(this.centerBound.east-this.centerBound.west)/6;
+            data.l5.lat = 1/4*this.centerBound.north+3/4*this.centerBound.south;
+            data.l5.lon = this.centerBound.east-(this.centerBound.east-this.centerBound.west)/6;
+            return JSON.parse('{"location":'+JSON.stringify(data)+'}');
+         }
+         
        }
      }
 
+      // query(){
+      //    return gql`
+      //   query{
+      //     location(s:"has_parent=${this.user}, lat>${this.centerBound.south}, lat<${this.centerBound.north}, lon>${this.centerBound.west}, lon<${this.centerBound.east}, limit=false") {
+      //       list{
+      //       title
+      //       lat
+      //       lon
+      //        categories{
+      //       list{
+      //         name
+      //         }
+      //       }
+      //       }
+      //     }
+      //   }`;
+      //  }
+    //  }
+     
+
   },
 
-    watch:{
+
+watch:{
       userCenter:{ 
       handler(newValue, oldValue){
         console.log("the center changed :")
       },    
     },    
+    // location:{ 
+    //   handler(newValue, oldValue){
+    //     alert("location :"+JSON.stringify(this.location))
+    //   },    
+    // }, 
    
   },
 
   methods: {
-     parentCenter: function(bound){
+     parentBound: function(bound){
        this.userCenter = bound;
        this.centerBound = {
+        //  west:bound.getSouthWest().wrap().lng,
+        //  east:bound.getNorthEast().wrap().lng,
          west:bound.getWest(),
          east:bound.getEast(),
          south:bound.getSouth(),
@@ -96,6 +179,10 @@ export default {
        }
 
        console.log("the west of centerBound :" + this.centerBound.west)
+     },
+
+     parentZoom: function(zoomLevel){
+       this.zoom = zoomLevel;
      },
 
      showMarker(){

@@ -103,7 +103,7 @@
       @geosearch_foundlocations ="onLocationFound"
     >
       <l-tile-layer layerType="base" :url="url" :attribution="attribution"></l-tile-layer>
-       <v-marker-cluster :options="clusterOptions" @clusterclick="click()">
+       <v-marker-cluster ref="clusterRef" :options="clusterOptions" @clusterclick="click()">
       <l-marker
         v-for="marker in markers"
         :key="marker.id"
@@ -111,6 +111,7 @@
         ref="marker"
         :lat-lng.sync="marker.latlng"
         :icon="marker.icon"
+        :count="marker.count"
       >
         <l-popup>
           <div>
@@ -164,7 +165,7 @@ export default {
   },
   props: {
     noLocation: Boolean,
-    mlocations: Array,
+    mlocations: Object,
     ableAdd: Boolean,
   },
   data() {
@@ -172,6 +173,7 @@ export default {
       zoom: 12,
       mapCenter: Array,
       centerLat: Number,
+      zoomLevel: 12,
       center: L.latLng(51.063072, 13.736793),
       bound: L.bounds(),
       url: "http://{s}.tile.osm.org/{z}/{x}/{y}.png",
@@ -224,9 +226,43 @@ export default {
         popupAnchor: [13, 1]
       }),
       showParagraph: true,
-      clusterOptions: {},
-      user: ''
-    };
+      clusterOptions: {
+        iconCreateFunction:function (cluster) {
+            var count = 0;
+            if (cluster.getAllChildMarkers) { // markercluster plugin call
+            var children = cluster.getAllChildMarkers();
+            for (var i = 0; i < children.length; i++) {
+        
+            if (children[i].count)
+            {
+           
+              count += children[i].count;
+            }  
+            else
+            {  
+                 count++;
+                 
+            }
+                    }
+            }
+            else if(cluster.count) { // custom call
+                count = cluster.count;
+            }
+
+            var c = 'marker-cluster-';
+            if (count < 10) {
+                c += 'small';
+            } else if (count < 100) {
+                c += 'medium';
+            } else {
+                c += 'large';
+            }
+              return L.divIcon({ html: '<div><span>' + count + '</span></div>', className: 'marker-cluster ' + c, iconSize: L.point(40, 40) });
+            }, 
+                singleMarkerMode:false,
+            },
+              user: ''
+       };
   },
 
 
@@ -303,28 +339,74 @@ export default {
 
 // add all the markers when initialization  
     addAllMarkers: function(){
-      if(this.mlocations != undefined){
-        console.log("the locations received from processwire :" + this.mlocations.length)
-        for (let i = 0; i < this.mlocations.length; ++i) {
-      
+      // alert("in the map :"+JSON.stringify(this.mlocations))
+      if(this.mlocations.location.list != undefined){
+        this.markers.splice(0, this.markers.length);
+        // console.log("the locations received from processwire :" + this.mlocations.list.length)
+        for (let i = 0; i < this.mlocations.location.list.length; ++i) {
 
-        let marker = {
+        // let category = this.mlocations.list[i].categories.list[0].name;
+        this.changeIcon(category);
+
+        // let marker = {
+        //   id: i + 1,
+        //   latlng: L.latLng(this.mlocations.list[i].lat, this.mlocations.list[i].lon),
+        //   content: this.mlocations.list[i].title,
+        //   icon: this.defaultIcon,
+        // };
+
+      let marker = {
           id: i + 1,
-          latlng: L.latLng(this.mlocations[i].lat, this.mlocations[i].lon),
-          content: this.mlocations[i].title,
-          icon: this.defaultIcon
+          latlng: L.latLng(this.mlocations.location.list[i].lat, this.mlocations.location.list[i].lon),
+          content: this.mlocations.location.list[i].title,
+          icon: this.defaultIcon,
+          count: 1
         };
+        marker.icon = this.clusterOptions.iconCreateFunction(marker);
+
 
         this.markers.push(marker);
       }
+      //  let markerTest = {
+      //     id: 6,
+      //     latlng: L.latLng(51.25421, 13.25468),
+      //     content: 'not important',
+      //     icon: this.defaultIcon,
+      //     count: 25,
+      //   };
+      //  markerTest.icon = this.clusterOptions.iconCreateFunction(markerTest);
+       
+    
+      // this.markers.push(markerTest)
 
       console.log("The length of the markers :" + this.markers.length);
+      }else{
+        // alert("in the map :"+JSON.stringify(this.mlocations))
+        this.markers.splice(0, this.markers.length);
+        //ERROR:the length is undefined
+        // alert(Object.keys(this.mlocations.location).length)
+        for (let i = 0; i < Object.keys(this.mlocations.location).length; ++i) {
+          //alert(Object.keys(this.mlocations.location)[i])
+          var key = Object.keys(this.mlocations.location)[i];
+          // alert(this.mlocations.location[key].lat) 
+         let marker = {
+          id: i,
+          latlng: L.latLng(this.mlocations.location[key].lat, this.mlocations.location[key].lon),
+          content: "representing",
+          icon: this.defaultIcon,
+          count: this.mlocations.location[key].getTotal
+        };
+        marker.icon = this.clusterOptions.iconCreateFunction(marker);
+        this.markers.push(marker);
       }
+      }
+
+
     },
 
 //display the markers of specific category
     addMarker: function(msgs) {
-      this.msg = msgs;
+       this.msg = msgs;
       var length = this.mlocations.length;
       console.log("the category you clicked is :" + msgs);
 
@@ -455,7 +537,6 @@ export default {
 
 // popup the form dialog for adding the new locations
     addLocation(event) {   
-      alert(this.mapCenter.lat)
       if (this.ableAdd == true) {
         this.lat = event.latlng.lat;
         this.lon = event.latlng.lng;
@@ -477,12 +558,25 @@ export default {
 // display the clicked marker information on the dialog
     editMarker(id) {
       //get the new data of clicked marker
+      //this.title = this.mlocations[id - 1].title;
+      this.title = this.markers[id].content;
+      if(this.title == 'representing'){
+        var map = this.$refs.map.mapObject;
+        map.setView(this.markers[id].latlng,this.zoomLevel+1);
+
+        // alert(this.zoomLevel)
+        // if(this.zoomLevel)
+        // this.bound = map.getBounds().pad(1);
+
+
+      }else{
       this.title = this.mlocations[id - 1].title;
       this.vcategories = [];
       this.lat = this.mlocations[id - 1].lat;
       this.lon = this.mlocations[id - 1].lon;
       this.confMsg = "Edit the location";
       this.showDelete = true;
+      
       for (let i = 0; i < this.mlocations[id - 1].categories.list.length; ++i) {
         this.vcategories[i] = this.mlocations[id - 1].categories.list[i].name;
       }
@@ -494,6 +588,8 @@ export default {
 
       this.id = id;
       this.dialog = true;
+
+      }
     },
 
   // add new location or edit the location to the processwire
@@ -585,9 +681,9 @@ export default {
             .then(response => {
               // if successfully responsed, change the marker info(title, categories)
               this.mlocations[this.id - 1].title = this.title;
-              this.mlocations[this.id - 1].categories.list.splice(0,this.mlocations[this.id - 1].categories.list.length);
+              this.mlocations[this.id - 1].categories.splice(0,this.mlocations[this.id - 1].categories.length);
               for (let i = 0; i < this.vcategories.length; ++i) {
-                this.mlocations[this.id - 1].categories.list.push(JSON.parse('{"name":"' + this.vcategories[i] + '"}')
+                this.mlocations[this.id - 1].categories.push(JSON.parse('{"name":"' + this.vcategories[i] + '"}')
                 );
               }
 
@@ -611,22 +707,62 @@ export default {
         }
       }
     },
+    customizedIcon:function(cluster){
+
+     this.clusterOptions.iconCreateFunction= function (cluster) {
+            var count = 0;
+            if (cluster.getAllChildMarkers) { // markercluster plugin call
+            var children = cluster.getAllChildMarkers();
+            for (var i = 0; i < children.length; i++) {
+        
+                if (children[i].count)
+                {
+         
+                  count += children[i].count;
+                }
+                    
+                else
+                {  
+                    count++;
+               
+                }
+                
+                  }
+              }
+              else if(cluster.count) { // custom call
+                  count = cluster.count;
+              }
+
+              var c = 'marker-cluster-';
+              if (count < 10) {
+                  c += 'small';
+              } else if (count < 100) {
+                  c += 'medium';
+              } else {
+                  c += 'large';
+              }
+                return L.divIcon({ html: '<div><span>' + count + '</span></div>', className: 'marker-cluster ' + c, iconSize: L.point(40, 40) });
+              }
+
+       },
 
 
   },
 
   watch:{
-    //   mapCenter:{ 
-    //   deep: true,
-    //   handler(newValue, oldValue){
-    //     console.log("test when the center changed :" + this.mapCenter.lat)
-    //   },    
-    // },
-
     mapCenter:{ 
       handler(newValue, oldValue){
         console.log("the center changed :" + newValue + ", old center :" + oldValue)
-         this.$emit("parentCenter", this.bound);
+         if(this.zoomLevel >= 10){
+          //  alert(this.bound.getSouthWest())
+           this.$emit("parentBound", this.bound);
+           this.$emit("parentZoom", this.zoomLevel);
+         }else{
+          //  alert(this.bound.getSouthWest())
+           this.$emit("parentBound", this.bound);
+           this.$emit("parentZoom", this.zoomLevel);
+           console.log("the zoom level is less than 14")
+         }
       },    
     },
 
@@ -646,6 +782,15 @@ export default {
       handler(newValue, oldValue){
         if (this.mlocations != '') {
          this.addAllMarkers();
+          // Solved: the sum of the markers
+          // var cluster = this.$refs.clusterRef.mapObject;
+          // var markerArray = cluster.getLayers();
+          // for(var i in markerArray){
+          //   // console.log("the i is:"+i+this.markers[i].id)
+          //   markerArray[i].count = this.markers[i].count;
+          // }
+          // cluster.refreshClusters(markerArray);
+          // this.customizedIcon(cluster);
         }else if(this.mlocations == ''){
           this.$notify({
             group: "notification",
@@ -663,8 +808,6 @@ export default {
 
   mounted: function() {
     var timeoutHandler;
-  
-
 // store the user session 
     this.user = sessionStorage.getItem('user');
 
@@ -681,7 +824,6 @@ export default {
 // locate the user
     var self = this;
     const map = self.$refs.map.mapObject;
-
     map.locate({
       setView: true,
       enableHighAccuracy: true,
@@ -700,12 +842,12 @@ export default {
 
       L.circle(e.latlng, radius).addTo(map);
     };
+
+
     console.log("the bounds of the location :" + map.getBounds().getEast() + "," + map.getBounds().getWest() + "," + map.getBounds().getSouth() + "," + map.getBounds().getNorth())
      this.bound = map.getBounds();
-   //  alert(map.getCenter())
      this.mapCenter = map.getCenter();
-     this.centerLat = this.mapCenter.lat;
-     
+
 
    // move the map  
   //   map.on('moveend', ()=>{
@@ -726,22 +868,55 @@ export default {
   // });
   
 
-   map.on('zoomend', ()=> {
-      // cancel any timeout currently running
+  map.on('zoomend', ()=> {
+  // cancel any timeout currently running
   window.clearTimeout(timeoutHandler);
   // create new timeout to fire sesarch function after 500ms (or whatever you like)
   timeoutHandler = window.setTimeout(()=> {
     // run some function to get results or update markers or something
-    this.mapCenter = map.getCenter();
-     this.centerLat = this.mapCenter.lat;
-     this.bound = map.getBounds();
-	 console.log("the bounds of the location :" + map.getBounds().getEast() + "," + map.getBounds().getWest() + "," + map.getBounds().getSouth() + "," + map.getBounds().getNorth())
-	 console.log("the current zoom level is :" + map.getZoom());
-  }, 2000);
-     
+
+	 console.log("the bounds of the location :" + map.getBounds().getNorthEast().wrap().lng + "," + map.getBounds().getSouthWest().wrap().lng + "," + map.getBounds().getSouth() + "," + map.getBounds().getNorth())
+   console.log("the current zoom level is :" + map.getZoom());
+   
+
+   if(map.getZoom() >= 10){
+     this.bound = map.getBounds().pad(1);
+    //console.log(this.bound.getWest()-this.bound.getEast())
+   }
+  //  else if(map.getZoom() < 14 && map.getZoom() > 4){
+  //    //according to the large bound, the mlocation will not update new locations, but original locations with clustermarker with center coordinate and count
+  //    //asign each marker a property count
+  //    //store the previous zoom level and bound
+  //    //only display the cluster markers
+  //    console.log("the zoom level is greater than 4 and less than 14")
+  //    this.bound = map.getBounds().pad(0.5);
+  //  }
+   else if(map.getZoom() < 10){
+    // 
+    //  console.log("the zoom level is less than 12")
+     this.bound = map.getBounds(); 
+     console.log(this.bound.getWest()-this.bound.getEast())
+   }
+
+  // Solved: the sum of the markers
+  var cluster = this.$refs.clusterRef.mapObject;
+  var markerArray = cluster.getLayers();
+  for(var i in markerArray){
+    // console.log("the i is:"+i+this.markers[i].id)
+    markerArray[i].count = this.markers[i].count;
+  }
+  cluster.refreshClusters(markerArray);
+  this.customizedIcon(cluster);
+  
+  this.zoomLevel = map.getZoom();
+  this.mapCenter = map.getCenter();
+ 
+
+  }, 1000);   
   });
 
-  this.$emit("parentCenter", this.bound);
+  this.$emit("parentBound", this.bound);
+  this.$emit("parentZoom", this.zoomLevel);
 
     map.on('geosearch_foundlocations', function (e) {
     e.Locations.forEach(function (Location) {
@@ -768,5 +943,14 @@ div .v-dialog__content {
   align-items: flex-end;
   width: 35%;
 }
+
+
+.mycluster {
+			width: 40px;
+			height: 40px;
+			background-color: greenyellow;
+			text-align: center;
+			font-size: 24px;
+		}
 
 </style>
