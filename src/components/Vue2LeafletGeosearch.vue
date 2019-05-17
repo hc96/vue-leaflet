@@ -22,7 +22,6 @@ export default {
   name: 'v-geosearch',
   data() {
     return {
-      searchValue: '',
       searchControl: Object,
     };
   },
@@ -34,16 +33,9 @@ export default {
     this.remove();
   },
   methods: {
-    doThing: function(){
-      this.searchValue = document.getElementById("searchBox").value;
-    },
-
     deferredMountedTo(parent) {
       const searchControl = new GeoSearchControl(this.options);
       parent.addControl(searchControl);
-
-    // document.getElementById("searchBox").addEventListener('input', this.doThing);
-    // this.$emit('parentSearch', this.searchValue)
 
     },
     remove() {
@@ -56,16 +48,6 @@ export default {
         this.deferredMountedTo(this.$parent.mapObject);
       }
     },
-  },
-  watch:{
-    searchValue:{
-      handler(newSearch, oldSearch){
-      // search the marker
-      //console.log("change of the input :" + this.searchValue)
-      this.$emit('parentSearch', this.searchValue)
-      }
-    }
-
   },
 };
 </script>
